@@ -102,12 +102,13 @@ class XelpOCR:
         return ymin, ymax
 
     def get_ocr_results(self):
-        return self.ocr.ocr(self.output_pdf_path, cls=True)
+        return self.ocr.ocr(self.input_pdf_path, cls=True)
 
     def start_ocr(self):
-        self.rotate_landscape_pages()
+        # self.rotate_landscape_pages()
         os.makedirs(self.text_folder_path, exist_ok=True)
         result = self.get_ocr_results()
+        pdf_text = ''
         for page_no, page_data in enumerate(result):
             sorted_data = sorted(page_data, key=lambda x: x[0][0][1])
             page_xmin, _, _, _ = self.find_page_coordinates(sorted_data)
@@ -162,11 +163,15 @@ class XelpOCR:
                     prev_bbox = bbox
                     prev_xmax = curr_xmax
                 page_text += '\n' + line
-
-            page_file_path = os.path.join(
-                self.text_folder_path, f"{page_no}.txt")
-            with open(page_file_path, 'w') as f:
-                f.write(page_text)
+            
+            pdf_text += '\npage: ' + str(page_no) + page_text
+            # page_file_path = os.path.join(
+            #     self.text_folder_path, f"{page_no}.txt")
+            # with open(page_file_path, 'w') as f:
+            #     f.write(page_text)
+        pdf_folder_path = os.path.join(self.text_folder_path, os.path.basename(self.input_pdf_path)[:-4] + '.txt')
+        with open(pdf_folder_path, 'w') as f:
+            f.write(pdf_text)
 
 
 if __name__ == '__main__':
@@ -180,7 +185,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--output_pdf_path',
         type=str,
-        required=True,
+        required=False,
         help='Path to the output PDF file.')
     parser.add_argument(
         '--text_folder_path',
@@ -195,3 +200,4 @@ if __name__ == '__main__':
 
     xelp_ocr = XelpOCR(input_pdf_path, output_pdf_path, text_folder_path)
     xelp_ocr.start_ocr()
+    
