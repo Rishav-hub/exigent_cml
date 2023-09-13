@@ -1,5 +1,12 @@
-paddlepaddle-gpu
-pymupdf==1.19.0
-paddleocr>=2.0.1
-pdfminer==20191125
-PyPDF2==3.0.1
+# Retriever
+farm-haystack[preprocessing,elasticsearch]==1.20.0
+sentence-transformers==2.2.2
+pandas
+
+# Model
+
+
+# API
+fastapi==0.99.1
+uvicorn==0.22.0
+
