@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from typing import List
 
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
