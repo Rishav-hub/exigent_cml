@@ -1,31 +1,10 @@
-import os
-import argparse
-from src.components.pdf_to_text_ocr import XelpOCR
+from src.components.custom_retriever import RetrieverPipeline
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Extract text from a PDF file using XelpOCR.')
-    parser.add_argument(
-        '--input_pdf_path',
-        type=str,
-        required=True,
-        help='Path to the input PDF file.')
-    parser.add_argument(
-        '--output_pdf_path',
-        type=str,
-        required=True,
-        help='Path to the output PDF file.')
-    parser.add_argument(
-        '--text_folder_path',
-        type=str,
-        required=True,
-        help='Path to the text folder.')
-    args = parser.parse_args()
+    retriever_pipeline = RetrieverPipeline()
+    retriever_result = retriever_pipeline.run_retriever_pipeline(
+    file_path = [r"D:\project\exigent_cml\requirements.txt"],
+    key = "Payment Terms (Detail)",
+    file_type = "text"
+)
 
-    input_pdf_path = args.input_pdf_path
-    output_pdf_path = args.output_pdf_path
-    text_folder_path = args.text_folder_path
-
-    xelp_ocr = XelpOCR(input_pdf_path, output_pdf_path, text_folder_path)
-    xelp_ocr.start_ocr()
-    

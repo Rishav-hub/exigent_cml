@@ -4,9 +4,12 @@ sentence-transformers==2.2.2
 pandas
 
 # Model
-
+transformers==4.32.1
+datasets==2.11
+evaluate==0.4.0
+rouge-score==0.1.2
+accelerate==0.22.0
 
 # API
 fastapi==0.99.1
 uvicorn==0.22.0
-
