@@ -86,7 +86,7 @@ class CustomRetriever:
             model_format="transformers"
         )
         self.retriever = BM25Retriever(document_store=self.document_store)
-        self.ranker = SentenceTransformersRanker(model_name_or_path="cross-encoder/ms-marco-MiniLM-L-12-v2")
+        # self.ranker = SentenceTransformersRanker(model_name_or_path="cross-encoder/ms-marco-MiniLM-L-12-v2")
         self.join_documents = JoinDocuments(
           join_mode="concatenate",
           # weights = [0.1, 13] # Assigning weight to sparse and dense embeddings
@@ -108,7 +108,7 @@ class CustomRetriever:
       self.pipeline.add_node(component=self.embedding_retriever, name="EmbeddingRetriever", inputs=["Query"])
       self.pipeline.add_node(component=self.join_documents, name="JoinDocuments",
                     inputs=["BM25Retriever", "EmbeddingRetriever"])
-      self.pipeline.add_node(component=self.ranker, name="Ranker", inputs=["JoinDocuments"])
+      # self.pipeline.add_node(component=self.ranker, name="Ranker", inputs=["JoinDocuments"])
 
       # Run the pipeline
       # NOTE -: As we are using "BAAI/bge-base-en" we need to add initial instruction for retrieval as represented here 
@@ -118,7 +118,7 @@ class CustomRetriever:
       params={
           "BM25Retriever": {"top_k": 30}, # TODO -: Define the parameters in a configuration file
           "EmbeddingRetriever": {"top_k": 30},
-          "Ranker": {"top_k": 3},
+          # "Ranker": {"top_k": 3},
         }
       )
       return result
@@ -155,16 +155,14 @@ class RetrieverPipeline:
     self.custom_retriever.generate_embedding()
 
     # If it's a `text` file then we can take 3 documents. If it is dropdown then we may include less document
-    if file_type == "text":
+    if file_type == "text" or file_type == "radio":
       retriever_result = self.custom_retriever.retrieval_pipeline(key)
+      retriever_result = retriever_result['documents'][:4]
     else:
       retriever_result = self.custom_retriever.retrieval_pipeline(key)
-
-    retriever_result = retriever_result['documents']
+      retriever_result = retriever_result['documents'][:4]
 
     return retriever_result
-
-
 
 
 class RetrieverPipelineDateTime:

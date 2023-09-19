@@ -1,18 +1,16 @@
 import pandas as pd
 import numpy as np
 import torch
-import shutil
-import os
-import random
-import evaluate
 
-from random import sample
-from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, AutoConfig, AutoModel
-from datasets import load_dataset, Dataset, concatenate_datasets
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoConfig, AutoModel
+
+from src.utils import join_sentences, concatinate_documents
+from src.components.custom_retriever import RetrieverPipeline
+from config import *
 
 def get_context(context: str, file_type:str, name: str, option: str):
   input_context = str()
-  if file_type == "text" or file_type == "number":
+  if file_type == TEXT or file_type == NUMBER:
     input_context = f"""
       Task: extractive_qa
       Type: {file_type}
@@ -26,7 +24,7 @@ def get_context(context: str, file_type:str, name: str, option: str):
 
       Answer from the context:
   """
-  elif file_type == "radio" or file_type == "dropdown" or file_type == "checkbox":
+  elif file_type == RADIO or file_type == DROPDOWN or file_type == CHECKBOX:
     input_context = f"""
         Task: extractive_qa
         Type: {file_type}
@@ -40,8 +38,8 @@ def get_context(context: str, file_type:str, name: str, option: str):
 
         Answer should be from these {option}:
     """
-  elif file_type == "datetime":
-    input_text = f"""
+  elif file_type == DATETIME:
+    input_context = f"""
      Task: extractive_qa
      Context:
 
@@ -53,6 +51,37 @@ def get_context(context: str, file_type:str, name: str, option: str):
      """
 
   return input_context
+  
+# Creating the customized model, by adding a drop out and a dense layer on top of deberta to get the final output for the model.
+class DebertaClass(torch.nn.Module):
+    def __init__(self, target_cols, model_name):
+        super(DebertaClass, self).__init__()
+        self.config = AutoConfig.from_pretrained(model_name, output_hidden_states=False)
+        self.model = AutoModel.from_pretrained(model_name)
+        self.pooler = MeanPooling()
+        self.fc1 = torch.nn.Linear(self.config.hidden_size, len(target_cols))
+
+    def forward(self, ids, mask, token_type_ids):
+        outputs = self.model(ids, attention_mask=mask, token_type_ids=token_type_ids, return_dict=False)
+        encoder_layer = outputs[0]
+
+        pooled_output = self.pooler(encoder_layer, mask)
+        # Pass the pooled features to the fully connected la
+        # 3yer (fc1)
+        output = self.fc1(pooled_output)
+        return output
+
+class MeanPooling(torch.nn.Module):
+    def __init__(self):
+        super(MeanPooling, self).__init__()
+
+    def forward(self, last_hidden_state, attention_mask):
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+        sum_embeddings = torch.sum(last_hidden_state * input_mask_expanded, 1)
+        sum_mask = input_mask_expanded.sum(1)
+        sum_mask = torch.clamp(sum_mask, min=1e-9)
+        mean_embeddings = sum_embeddings / sum_mask
+        return mean_embeddings
 
 class T5TextGenerationInference:
   def __init__(self, model_name: str, top_p=0.95, temperature=0.3,):
@@ -111,34 +140,106 @@ class T5TextGenerationInference:
               skip_special_tokens=True
             )
     return model_prediction
-  
-# Creating the customized model, by adding a drop out and a dense layer on top of deberta to get the final output for the model.
-class DebertaClass(torch.nn.Module):
-    def __init__(self, target_cols):
-        super(DebertaClass, self).__init__()
-        self.config = AutoConfig.from_pretrained("microsoft/deberta-base", output_hidden_states=False)
-        self.model = AutoModel.from_pretrained("microsoft/deberta-base")
-        self.pooler = MeanPooling()
-        self.fc1 = torch.nn.Linear(self.config.hidden_size, len(target_cols))
 
-    def forward(self, ids, mask, token_type_ids):
-        outputs = self.model(ids, attention_mask=mask, token_type_ids=token_type_ids, return_dict=False)
-        encoder_layer = outputs[0]
+class DebertaExtractionInference:
+  def __init__(self, model_name: str, state_dict_path: str):
+    self.model_name = model_name
+    self.device = "cuda" if torch.cuda.is_available() else "cpu"
+    self.state_dict = torch.load(state_dict_path)
+    self.target_cols = self.state_dict["target_cols"]
 
-        pooled_output = self.pooler(encoder_layer, mask)
-        # Pass the pooled features to the fully connected layer (fc1)
-        output = self.fc1(pooled_output)
-        return output
+    self.tokenizer = self._load_tokenizer(model_name=self.model_name)
+    self.model = self._load_model()
 
-class MeanPooling(torch.nn.Module):
-    def __init__(self):
-        super(MeanPooling, self).__init__()
+  @staticmethod
+  def _load_tokenizer(model_name: str):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    return tokenizer
 
-    def forward(self, last_hidden_state, attention_mask):
-        input_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
-        sum_embeddings = torch.sum(last_hidden_state * input_mask_expanded, 1)
-        sum_mask = input_mask_expanded.sum(1)
-        sum_mask = torch.clamp(sum_mask, min=1e-9)
-        mean_embeddings = sum_embeddings / sum_mask
-        return mean_embeddings
+  def _load_model(self):
+    model = DebertaClass(self.target_cols)
+    model.to(self.device)
+    model.load_state_dict(self.state_dict["state_dict"])
+    return model
 
+  def run_inference(self, inputs: str):
+
+    # Get all the components from input
+    context, file_type, name, option = inputs['context'], inputs['file_type'], inputs['name'], inputs["option"]
+
+    # pass it to form the context template
+    input_context = f"Type: {file_type}, Question: {name}, From the Option: {option} Context: {context}"
+
+    inputs = self.tokenizer.encode_plus(
+        input_context,
+        truncation=True,
+        add_special_tokens=True,
+        padding='max_length',
+        return_token_type_ids=True,
+    )
+
+    ids = torch.tensor(inputs['input_ids'], dtype=torch.long).unsqueeze(0).to(self.device)
+    mask = torch.tensor(inputs['attention_mask'], dtype=torch.long).unsqueeze(0).to(self.device)
+    token_type_ids = torch.tensor(inputs['token_type_ids'], dtype=torch.long).unsqueeze(0).to(self.device)
+
+    # Pass it to the model for inference
+    model_output = self.model(ids, mask, token_type_ids)
+
+    # Get the index with maximum probability and get the value from the target column
+    model_prediction = self.target_cols[np.argmax(model_output.cpu().detach().numpy().tolist())]
+
+    return model_prediction
+
+class Extraction:
+  def __init__(self, file_path: str,
+               key: str,
+               file_type: str,
+               options: str,
+               retriever_pipeline: RetrieverPipeline,
+               text_generation_inference: T5TextGenerationInference,
+               deberta_extraction_inference: DebertaExtractionInference):
+    self.file_path = file_path
+    self.key = key
+    self.file_type = file_type
+    self.options = options
+    self.retriever_pipeline = retriever_pipeline
+    self.text_generation_inference = text_generation_inference
+    self.deberta_extraction_inference = deberta_extraction_inference
+
+  def run_extraction(self, use_t5 = True):
+    try:
+      # Running retrieval pipeline
+      if self.file_type == DATETIME:
+        retriever_result = self.retriever_pipeline.run_retriever_pipeline(
+          file_path = self.file_path
+        )
+        concatenated_retrieval_result = join_sentences(retriever_result)
+      else:
+        retriever_result = self.retriever_pipeline.run_retriever_pipeline(
+          file_path = [self.file_path],
+          key = self.key,
+          file_type = self.file_type
+        )
+
+        # Retriever result must be concatenated
+        concatenated_retrieval_result = concatinate_documents(retriever_result)
+
+      # Prepare the inputs for
+      inputs = {
+          'context' : concatenated_retrieval_result,
+          'file_type' : self.file_type,
+          'name' : self.key,
+          'option' : self.options
+      }
+
+      if use_t5:
+        # Running flan-t5 pipeline
+        model_prediction = self.text_generation_inference.run_inference(inputs = inputs)
+      else:
+        # Running DeBERTA pipeline
+        model_prediction = self.deberta_extraction_inference.run_inference(inputs = inputs)
+
+      return model_prediction
+    except Exception as e:
+      raise e
+    
