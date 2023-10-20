@@ -27,11 +27,11 @@ class InferencePipeline:
         # Retrieval pipeline for datetime
         self.retriever_pipeline_datetime = RetrieverPipelineDateTime()
     
-    def get_inference(self, file_type: str, key: str, options: str, txt_file_path:str):
+    def get_inference(self, file_type: str, key: str, options: str, txt_file_path:str, embedding_model: str):
         try:
             # BM25 and embedding retrieval pipeline initiated
-            retriever_pipeline = RetrieverPipeline()
-            
+            retriever_pipeline = RetrieverPipeline(embedding_model=embedding_model)
+
             # Inference for file_type as 'text'
             if file_type == TEXT:
                 extraction_pipe = Extraction(
@@ -92,6 +92,18 @@ class InferencePipeline:
                     deberta_extraction_inference=None
                 )
                 model_prediction = extraction_pipe.run_extraction(use_t5=True) 
+            else:
+                extraction_pipe = Extraction(
+                    file_path=txt_file_path,
+                    key=key,
+                    file_type=file_type,
+                    options=options,
+                    retriever_pipeline=retriever_pipeline,
+                    text_generation_inference=text_generation_inference_text,
+                    deberta_extraction_inference=None
+                )
+                model_prediction = extraction_pipe.run_extraction(use_t5=True)
+
 
             torch.cuda.empty_cache()  # Clear GPU memory after each iteration
             gc.collect()

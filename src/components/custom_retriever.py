@@ -10,7 +10,7 @@ nltk.download('punkt')
 
 from haystack import Pipeline
 from haystack.document_stores import ElasticsearchDocumentStore
-from haystack.nodes import (BM25Retriever, EmbeddingRetriever, FARMReader,
+from haystack.nodes import (BM25Retriever, EmbeddingRetriever,
                             JoinDocuments, PreProcessor,
                             SentenceTransformersRanker, TextConverter)
 
@@ -78,11 +78,11 @@ class DocumentPreprocessor:
       return "Document Processing Completed"
 
 class CustomRetriever:
-    def __init__(self, document_store):
+    def __init__(self, document_store, embedding_model: str):
         self.document_store = document_store
         self.embedding_retriever = EmbeddingRetriever(
             document_store=self.document_store,
-            embedding_model="BAAI/bge-base-en",
+            embedding_model=embedding_model,
             model_format="transformers"
         )
         self.retriever = BM25Retriever(document_store=self.document_store)
@@ -125,7 +125,7 @@ class CustomRetriever:
 
 class RetrieverPipeline:
 
-  def __init__(self):
+  def __init__(self, embedding_model):
     # First everytime initialize elastic store
     try:
         self.document_store = initialize_elasticsearch_document_store()
@@ -136,7 +136,7 @@ class RetrieverPipeline:
     self.document_preprocessor = DocumentPreprocessor(self.document_store)
 
     # Main retriever pipeline
-    self.custom_retriever = CustomRetriever(self.document_store)
+    self.custom_retriever = CustomRetriever(self.document_store, embedding_model=embedding_model)
 
   # Run the pipeline including 1)Document preprocessing 2)Custom Retriever
   def run_retriever_pipeline(self, file_path: str, key: str, file_type: str) -> List[dict]:
