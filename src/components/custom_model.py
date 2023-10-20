@@ -157,7 +157,7 @@ class DebertaExtractionInference:
     return tokenizer
 
   def _load_model(self):
-    model = DebertaClass(self.target_cols)
+    model = DebertaClass(self.target_cols, self.model_name)
     model.to(self.device)
     model.load_state_dict(self.state_dict["state_dict"])
     return model
