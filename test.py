@@ -6,8 +6,8 @@ if __name__ == "__main__":
     # Define the paths to the CSV files
     inference_pipeline = InferencePipeline()
     file_path = "/home/ubuntu/exigent_cml/artifacts/LIServiceAgr-SVBFinancialGroup-MichaelDreyer.txt"
-    key = "Title of Agreement"
-    file_type = "text"
+    key = "Effective Date"
+    file_type = "datetime"
     options = None
     model_prediction = inference_pipeline.get_inference(
         file_type,
