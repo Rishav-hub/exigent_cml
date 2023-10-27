@@ -29,10 +29,12 @@ inference_pipeline = InferencePipeline()
 
 def background_process(text_file, categorial_keys):
     try:
-        final_output = dict()
+        data_model_structure = dict()
         _, txt_file_path = save_pdf_to_directory_fastapi(text_file=text_file)
         embedding_model: str = "RishuD7/finetune_base_bge_pretrained_v4"
         for categorical_key in categorial_keys:
+            final_output = dict()
+            header_name = categorical_key['header_name']
             print(categorical_key['fields'])
             for field in categorical_key['fields']:
                 print(field)
@@ -52,9 +54,12 @@ def background_process(text_file, categorial_keys):
                     "value" : str(model_prediction),
                     "instruction" : str(concatenated_retrieval_result) 
                 }
-                print("model_prediction", model_prediction)
-                print("concatenated_retrieval_result", concatenated_retrieval_result)
-                print("final_output", final_output)
+
+            data_model_structure[header_name] = final_output
+            print("model_prediction", model_prediction)
+            print("concatenated_retrieval_result", concatenated_retrieval_result)
+            print("final_output", final_output)
+        print("data_model_structure", data_model_structure)
         return "DOne"
     except Exception as e:
         raise e
