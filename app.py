@@ -25,6 +25,7 @@ redis_conn = Redis(
 )
 
 task_queue = Queue(connection=redis_conn, default_timeout=36000)
+inference_pipeline = InferencePipeline()
 
 def background_process(text_file, categorial_keys):
     try:
@@ -40,7 +41,7 @@ def background_process(text_file, categorial_keys):
                 options: str = field['options']
                 txt_file_path:str = txt_file_path
                 
-                model_prediction = InferencePipeline.get_inference(
+                model_prediction = inference_pipeline.get_inference(
                     file_type=file_type,
                     key=key,
                     options=options,
