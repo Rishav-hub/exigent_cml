@@ -13,6 +13,9 @@ from dotenv import load_dotenv
 
 import os, requests
 
+from src.pipeline import InferencePipeline
+from src.utils import save_pdf_to_directory, save_pdf_to_directory_fastapi
+
 app = FastAPI()
 
 redis_conn = Redis(
@@ -23,8 +26,21 @@ redis_conn = Redis(
 
 task_queue = Queue(connection=redis_conn, default_timeout=36000)
 
-def background_process():
-    pass
+def background_process(text_file, categorial_keys):
+    try:
+
+        text_folder_dir, input_text_path = save_pdf_to_directory_fastapi(text_file=text_file)
+
+        print(categorial_keys)
+        # file_type: str =  
+        # key: str = 
+        # options: str = 
+        # txt_file_path:str = 
+        # embedding_model: str = 
+        # model_prediction = InferencePipeline.get_inference()
+        return "DOne"
+    except Exception as e:
+        raise e
 
 @app.get("/")
 async def root_route():
@@ -43,6 +59,14 @@ async def ml_extraction(
     print(c_pk)
     print(text_file)
     print(categorial_keys)
+
+    categorial_keys = json.loads(categorial_keys)
+
+
+    output = background_process(text_file, categorial_keys)
+
+    print(output)
+
     return JSONResponse(
         status_code=200,
         content=f"Processing in Queue"
