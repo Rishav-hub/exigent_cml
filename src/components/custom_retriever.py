@@ -11,8 +11,7 @@ nltk.download('punkt')
 from haystack import Pipeline
 from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.nodes import (BM25Retriever, EmbeddingRetriever,
-                            JoinDocuments, PreProcessor,
-                            SentenceTransformersRanker, TextConverter)
+                            JoinDocuments, PreProcessor, TextConverter)
 
 from src.exception import CMLException
 from src.logger import logger_instance
