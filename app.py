@@ -41,14 +41,15 @@ def background_process(text_file, categorial_keys):
                 options: str = field['options']
                 txt_file_path:str = txt_file_path
                 
-                model_prediction = inference_pipeline.get_inference(
+                model_prediction, concatenated_retrieval_result = inference_pipeline.get_inference(
                     file_type=file_type,
                     key=key,
                     options=options,
                     txt_file_path=txt_file_path,
                     embedding_model=embedding_model
                 )
-                print(model_prediction)
+                print("model_prediction", model_prediction)
+                print("concatenated_retrieval_result", concatenated_retrieval_result) 
         return "DOne"
     except Exception as e:
         raise e

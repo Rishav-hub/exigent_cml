@@ -239,7 +239,7 @@ class Extraction:
         # Running DeBERTA pipeline
         model_prediction = self.deberta_extraction_inference.run_inference(inputs = inputs)
 
-      return model_prediction
+      return model_prediction, concatenated_retrieval_result
     except Exception as e:
       raise e
     

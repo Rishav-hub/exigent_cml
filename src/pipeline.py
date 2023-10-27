@@ -43,7 +43,7 @@ class InferencePipeline:
                     text_generation_inference=text_generation_inference_text,
                     deberta_extraction_inference=None
                 )
-                model_prediction = extraction_pipe.run_extraction(use_t5=True)
+                model_prediction, concatenated_retrieval_result = extraction_pipe.run_extraction(use_t5=True)
             
             elif (file_type == CHECKBOX) or (file_type == DROPDOWN):
                 extraction_pipe = Extraction(
@@ -55,7 +55,7 @@ class InferencePipeline:
                     text_generation_inference=text_generation_inference_text,
                     deberta_extraction_inference=deberta_inference_dd_ck
                 )
-                model_prediction = extraction_pipe.run_extraction(use_t5=False)
+                model_prediction, concatenated_retrieval_result = extraction_pipe.run_extraction(use_t5=False)
             
             elif file_type == NUMBER:
                 extraction_pipe = Extraction(
@@ -67,7 +67,7 @@ class InferencePipeline:
                     text_generation_inference=text_generation_inference_number,
                     deberta_extraction_inference=deberta_inference_dd_ck
                 )
-                model_prediction = extraction_pipe.run_extraction(use_t5=True)
+                model_prediction, concatenated_retrieval_result = extraction_pipe.run_extraction(use_t5=True)
 
             elif file_type == RADIO:
                 extraction_pipe = Extraction(
@@ -79,7 +79,7 @@ class InferencePipeline:
                     text_generation_inference=text_generation_inference_radio,
                     deberta_extraction_inference=deberta_inference_dd_ck
                 )
-                model_prediction = extraction_pipe.run_extraction(use_t5=True) 
+                model_prediction, concatenated_retrieval_result = extraction_pipe.run_extraction(use_t5=True) 
             
             elif file_type == DATETIME:
                 extraction_pipe = Extraction(
@@ -91,7 +91,7 @@ class InferencePipeline:
                     text_generation_inference=text_generation_inference_datetime,
                     deberta_extraction_inference=None
                 )
-                model_prediction = extraction_pipe.run_extraction(use_t5=True) 
+                model_prediction, concatenated_retrieval_result = extraction_pipe.run_extraction(use_t5=True) 
             else:
                 extraction_pipe = Extraction(
                     file_path=txt_file_path,
@@ -102,12 +102,12 @@ class InferencePipeline:
                     text_generation_inference=text_generation_inference_text,
                     deberta_extraction_inference=None
                 )
-                model_prediction = extraction_pipe.run_extraction(use_t5=True)
+                model_prediction, concatenated_retrieval_result = extraction_pipe.run_extraction(use_t5=True)
 
 
             torch.cuda.empty_cache()  # Clear GPU memory after each iteration
             gc.collect()
-            return model_prediction
+            return model_prediction, concatenated_retrieval_result
    
         except Exception as e:
             raise e
