@@ -1,0 +1,14 @@
+
+   Google" Tax Invoice.
+                                                                    Invoice number: 4647381113371686-4
+   Oct 11, 2023 - Nov 11, 2023
+                                              Description                Quantity
+   Transaction ID                                                                         Amount($)
+                                              Colab Pro+
+   COLSUB.8079-2150-3525-83699.7                                                  1            49.99
+                                                Subtotal in USD                             $49.99
+                                                Integrated GST (18%)                          $9.00
+                                                                                      $58.99
+                                                Total in USD
+                                                                                      Page 2 of 2
+-------
