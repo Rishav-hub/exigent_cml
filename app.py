@@ -31,22 +31,23 @@ def background_process(text_file, categorial_keys):
 
         _, txt_file_path = save_pdf_to_directory_fastapi(text_file=text_file)
         embedding_model: str = "RishuD7/finetune_base_bge_pretrained_v4"
-        print(categorial_keys['fields'])
-        for field in categorial_keys['fields']:
-            print(field)
-            file_type: str = field['type']
-            key: str = field['label_name']
-            options: str = field['options']
-            txt_file_path:str = txt_file_path
-            
-            model_prediction = InferencePipeline.get_inference(
-                file_type=file_type,
-                key=key,
-                options=options,
-                txt_file_path=txt_file_path,
-                embedding_model=embedding_model
-            )
-            print(model_prediction)
+        for categorical_key in categorial_keys:
+            print(categorical_key['fields'])
+            for field in categorical_key['fields']:
+                print(field)
+                file_type: str = field['type']
+                key: str = field['label_name']
+                options: str = field['options']
+                txt_file_path:str = txt_file_path
+                
+                model_prediction = InferencePipeline.get_inference(
+                    file_type=file_type,
+                    key=key,
+                    options=options,
+                    txt_file_path=txt_file_path,
+                    embedding_model=embedding_model
+                )
+                print(model_prediction)
         return "DOne"
     except Exception as e:
         raise e
