@@ -16,6 +16,8 @@ import os, requests
 from src.pipeline import InferencePipeline
 from src.utils import save_pdf_to_directory, save_pdf_to_directory_fastapi
 
+update_extraction_api = "http://10.0.146.154:5000/production_app/update_extraction/"
+
 app = FastAPI()
 
 redis_conn = Redis(
@@ -27,13 +29,13 @@ redis_conn = Redis(
 task_queue = Queue(connection=redis_conn, default_timeout=36000)
 inference_pipeline = InferencePipeline()
 
-def background_process(text_file, categorial_keys):
+def background_process(text_file, categorial_keys, data_request):
     try:
         data_model_structure = dict()
+        final_output = dict()
         _, txt_file_path = save_pdf_to_directory_fastapi(text_file=text_file)
         embedding_model: str = "RishuD7/finetune_base_bge_pretrained_v4"
         for categorical_key in categorial_keys:
-            final_output = dict()
             header_name = categorical_key['header_name']
             print(categorical_key['fields'])
             for field in categorical_key['fields']:
@@ -57,8 +59,16 @@ def background_process(text_file, categorial_keys):
 
             data_model_structure[header_name] = final_output
 
+            #print("model_prediction", model_prediction)
+            #print("concatenated_retrieval_result", concatenated_retrieval_result)
             print("final_output", final_output)
         print("data_model_structure", data_model_structure)
+	# Append outputs to the data request
+        data_request['final_output_json'] = json.dumps(final_output)
+        data_request['datamodel_structure'] = json.dumps(data_model_structure)
+	# Send predicted value to main extraction API
+        a = requests.post(update_extraction_api, data=data_request)
+        print("Status of Update extraction API is ", a.status_code)
         return "DOne"
     except Exception as e:
         raise e
@@ -72,6 +82,7 @@ async def ml_extraction(
     is_training: Annotated[bool, Form()],
     contract_id: Annotated[str, Form()],
     c_pk: Annotated[str, Form()],
+    bucket_name: Annotated[str, Form()],
     text_file: Annotated[UploadFile, File()],
     categorial_keys: Annotated[str, Form()],
 ):
@@ -80,11 +91,17 @@ async def ml_extraction(
     print(c_pk)
     print(text_file)
     print(categorial_keys)
+    print(bucket_name)
 
     categorial_keys = json.loads(categorial_keys)
+    data_request = {
+	"is_training" : is_training,
+	"contract_id" : contract_id,
+	"c_pk" : c_pk,
+	"bucket_name": bucket_name
+	}
 
-
-    output = background_process(text_file, categorial_keys)
+    output = background_process(text_file, categorial_keys, data_request)
 
     print(output)
 
