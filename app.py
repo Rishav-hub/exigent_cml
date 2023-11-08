@@ -59,8 +59,6 @@ def background_process(text_file, categorial_keys, data_request):
 
             data_model_structure[header_name] = final_output
 
-            #print("model_prediction", model_prediction)
-            #print("concatenated_retrieval_result", concatenated_retrieval_result)
             print("final_output", final_output)
         print("data_model_structure", data_model_structure)
 	# Append outputs to the data request
