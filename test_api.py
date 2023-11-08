@@ -22,6 +22,39 @@ data = {
                 "fieldExistTwo": True,
                 "display_name": 'Title of Agreement',
                 },
+                {
+                "label_name": 'title of Agreement',
+                "type": 'radio',
+                "options": None,
+                "header": 'text',
+                "playbook_instruction": 'Title of Agreement',
+                "fieldExistTwo": True,
+                "display_name": 'Title of Agreement',
+                },
+            ]
+        },
+        {
+            "header_name": 'BUSINESS and  PURPOSE',
+            "description": 'BUSINESS AND PURPOSE',
+            "fields": [
+                {
+                "label_name": 'Title of Agreement',
+                "type": 'text',
+                "options": None,
+                "header": 'text',
+                "playbook_instruction": 'Title of Agreement',
+                "fieldExistTwo": True,
+                "display_name": 'Title of Agreement',
+                },
+                {
+                "label_name": 'title of Agreement',
+                "type": 'radio',
+                "options": None,
+                "header": 'text',
+                "playbook_instruction": 'Title of Agreement',
+                "fieldExistTwo": True,
+                "display_name": 'Title of Agreement',
+                },
             ]
         }
     ]),
@@ -36,6 +69,8 @@ response = requests.post(url, data=data, files=files)
 
 # Check the response
 if response.status_code == 200:
+    print(response.content)
+    print(response.json())
     print("Request was successful.")
 else:
     print(f"Request failed with status code {response.status_code}")
