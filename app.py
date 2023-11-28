@@ -17,6 +17,9 @@ from src.pipeline import InferencePipeline
 from src.utils import save_pdf_to_directory, save_pdf_to_directory_fastapi
 
 update_extraction_api = "http://10.0.146.154:5000/production_app/update_extraction/"
+load_dotenv()
+
+
 
 app = FastAPI()
 
